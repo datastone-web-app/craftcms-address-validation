@@ -1,0 +1,10 @@
+#address-query {
+	padding: 20px;
+	width: 320px;
+	font-size: inherit;
+	border: 2px solid #ccc;
+}
+
+#address-result {
+	padding: 30px;
+}

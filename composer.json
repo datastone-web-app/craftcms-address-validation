@@ -1,0 +1,30 @@
+{
+    "name": "datastone/craft-address-validation",
+    "description": "Address validation based on postcode eu",
+    "type": "craft-plugin",
+    "version": "1.0.0",
+    "keywords": ["postcode", "postcode.eu", "address", "validation", "datastone"],
+    "license": "proprietary",
+    "authors": [
+      {
+        "name": "Datastone",
+        "homepage": "https://datastone.nl"
+      }
+    ],
+    "support": {
+      "email": "info@datastone.nl"
+    },
+    "require": {
+      "craftcms/cms": "^4.2.5"
+    },
+    "autoload": {
+      "psr-4": {
+        "datastone\\addressValidation\\": "src/"
+      }
+    },
+    "extra": {
+      "name": "Postcode.eu address validation",
+      "handle": "address-validation",
+      "class": "datastone\\addressValidation\\AddressValidation"
+    }
+  }
