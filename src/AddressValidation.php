@@ -1,15 +1,12 @@
 <?php declare(strict_types=1);
 
 namespace datastone\addressValidation;
-
-use Craft;
-use datastone\obfuscate\twigextensions\DatastoneObfuscateTwigExtension;
-use datastone\obfuscate\services\DatastoneObfuscateService;
-use craft\web\twig\variables\CraftVariable;
 use yii\base\Event;
+
 use craft\base\Model;
-use craft\elements\User;
-use craft\events\ModelEvent;
+use craft\events\RegisterUrlRulesEvent;
+use craft\web\UrlManager;
+use Yii;
 
 class AddressValidation extends \craft\base\Plugin
 {
@@ -19,23 +16,17 @@ class AddressValidation extends \craft\base\Plugin
     {
         parent::init();
 
-        // $this->setComponents([
-        //     'obfuscate' => \datastone\obfuscate\services\DatastoneObfuscateService::class
-        // ]);
+        $this->setComponents([
+            'postcodeEuClient' => \datastone\addressValidation\services\PostcodeEuService::class
+        ]);
 
-        // Event::on(
-        //     CraftVariable::class,
-        //     CraftVariable::EVENT_INIT,
-        //     function(Event $e) {
-        //         /** @var CraftVariable $variable */
-        //         $variable = $e->sender;
-        //         $variable->set('obfuscate', DatastoneObfuscateService::class);
-        //     }
-        // );
-
-        // if (Craft::$app->request->getIsSiteRequest()) {
-        //     Craft::$app->view->registerTwigExtension(new DatastoneObfuscateTwigExtension());
-        // }
+        Event::on(
+            UrlManager::class,
+            UrlManager::EVENT_REGISTER_SITE_URL_RULES,
+            function (RegisterUrlRulesEvent $event) {
+                $event->rules = array_merge(include(__DIR__ . '/routes.php'), $event->rules);            
+            }
+        );
     }
 
     protected function createSettingsModel(): ?Model

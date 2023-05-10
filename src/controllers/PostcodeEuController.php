@@ -4,95 +4,66 @@ namespace datastone\addressValidation\controllers;
 
 use craft\web\Controller;
 use datastone\addressValidation\AddressValidation;
-use GuzzleHttp\Client;
 use yii\web\Response;
+use datastone\addressValidation\services\PostcodeEuService;
 
 class PostcodeEuController extends Controller
 {
     protected array|bool|int $allowAnonymous = true;
 
-    // {{ actionInput('address-validation/postcode-eu/autocomplete') }} or {{site_url}}/actions/address-validation/postcode-eu/autocomplete
+    public AddressValidation $plugin;
+    public PostcodeEuService $postcodeEuClient;
+
+    public function __construct($id, $module, $config = [])
+    {
+        parent::__construct($id, $module, $config);
+
+        $this->plugin = AddressValidation::getInstance();
+        $this->postcodeEuClient = $this->plugin->postcodeEuClient;
+    }
+
+    // {{site_url}}/actions/address-validation/postcode-eu/autocomplete
     public function actionAutocomplete(): Response
     {
         $this->requireSiteRequest();
 
-        $settings = AddressValidation::getInstance()->getSettings();
+        $context = rawurlencode($this->request->getSegment(3));
+        $term = rawurlencode($this->request->getSegment(4));
+        $endpoint = sprintf('autocomplete/%s/%s', $context, $term);
 
-        $client = new Client();
-
-        $context = rawurlencode($this->request->getRequiredParam('context'));
-        $term = rawurlencode($this->request->getRequiredParam('term'));
-
-        $request = $client->get(
-            sprintf('%s/autocomplete/%s/%s', rtrim($settings->apiUrl, '/'), $context, $term),
-            [
-                'http_errors' => false,
-                'headers' => [
-                    'X-Autocomplete-Session' => $_SERVER['HTTP_X_AUTOCOMPLETE_SESSION'] ?? 'remove-after-testing',
-                ],
-                'auth' => [
-                    $settings->apiKey,
-                    $settings->apiSecret,
-                ]
-            ]
-        );
+        $response = $this->postcodeEuClient->request($endpoint);
         
-        return $this->asJson(json_decode($request->getBody()->getContents()));
+        return $this->asJson(json_decode($response));
     }
 
     public function actionAddress(): Response
     {
         $this->requireSiteRequest();
 
-        $settings = AddressValidation::getInstance()->getSettings();
-
-        $client = new Client();
-
-        $address = $this->request->getRequiredParam('address');
-
-        $request = $client->get(
-            sprintf('%s/address/%s', rtrim($settings->apiUrl, '/'), ltrim($address, '/')),
-            [
-                'http_errors' => false,
-                'headers' => [
-                    'X-Autocomplete-Session' => $_SERVER['HTTP_X_AUTOCOMPLETE_SESSION'] ?? 'remove-after-testing',
-                ],
-                'auth' => [
-                    $settings->apiKey,
-                    $settings->apiSecret,
-                ]
-            ]
-        );
+        $address = $this->request->getSegment(3);
+        $endpoint = sprintf('address/%s', ltrim($address, '/'));
+         
+        $response = $this->postcodeEuClient->request($endpoint);
         
-        return $this->asJson(json_decode($request->getBody()->getContents()));
+        return $this->asJson(json_decode($response));
     }
 
     public function actionPostcode(): Response
     {
         $this->requireSiteRequest();
 
-        $settings = AddressValidation::getInstance()->getSettings();
-
-        $client = new Client();
+        $settings = $this->plugin->getSettings();
 
         $apiUrl = str_replace('international', 'nl', $settings->apiUrl);
-        $postCode = '5627BK';
-        $houseNumber = '57';
-
-        $request = $client->get(
-            sprintf('%s/addresses/postcode/%s/%s', rtrim($apiUrl, '/'), $postCode, $houseNumber),
-            [
-                'http_errors' => false,
-                'headers' => [
-                    'X-Autocomplete-Session' => $_SERVER['HTTP_X_AUTOCOMPLETE_SESSION'] ?? 'remove-after-testing',
-                ],
-                'auth' => [
-                    $settings->apiKey,
-                    $settings->apiSecret,
-                ]
-            ]
-        );
+        $postCode = $this->request->getSegment(3);
+        $houseNumber = $this->request->getSegment(4);
+        $addition = $this->request->getSegment(5);
         
-        return $this->asJson(json_decode($request->getBody()->getContents()));
+        //implode('/', array_slice($this->request->getSegments(), 1))
+        $endpoint = sprintf('addresses/postcode/%s/%s/%s', $postCode, $houseNumber, $addition);
+    
+        $response = $this->postcodeEuClient->request($endpoint, $apiUrl);
+        
+        return $this->asJson(json_decode($response));
     }
 }
